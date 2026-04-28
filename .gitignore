@@ -1,41 +1,113 @@
-# Dependencies
+# ========================================
+# DEPENDENCIES
+# ========================================
 node_modules/
+packages/*/node_modules/
 package-lock.json
 yarn.lock
 pnpm-lock.yaml
+npm-shrinkwrap.json
 
-# Environment
+# ========================================
+# ENVIRONMENT & SECRETS
+# ========================================
 .env
 .env.local
 .env.*.local
+.env.production.local
+.env.test.local
+!.env.example
 
-# Build
+# ========================================
+# BUILD & DIST
+# ========================================
 dist/
 build/
+out/
+packages/*/dist/
+packages/*/build/
 *.tsbuildinfo
+.turbo/
+.next/
 
-# IDE
+# ========================================
+# IDE & EDITOR
+# ========================================
 .vscode/
 .idea/
+*.sublime-project
+*.sublime-workspace
 *.swp
 *.swo
 *.swn
 .DS_Store
+.prettierignore
+.eslintignore
+*.iml
 
-# Runtime
+# ========================================
+# RUNTIME & LOGS
+# ========================================
 *.log
+logs/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+lerna.debug.log*
+.pnpm-debug.log*
 
-# Prisma
-.env.*.local
-prisma/migrations/
+# ========================================
+# DATABASE & PRISMA
+# ========================================
+packages/backend/prisma/migrations/
+packages/backend/.env
+packages/backend/.env.local
+prisma/.env
+prisma/.env.local
 
-# Testing
+# ========================================
+# TESTING
+# ========================================
 coverage/
 .nyc_output/
+*.lcov
+test-results/
+.jest-cache/
 
+# ========================================
+# TEMPORARY
+# ========================================
+tmp/
+temp/
+*.tmp
+*.tar
+*.gz
+*.zip
+
+# ========================================
 # OS
+# ========================================
 Thumbs.db
+.DS_Store
+.AppleDouble
+.LSOverride
+*.swp
+*.swo
+
+# ========================================
+# FRONTEND SPECIFIC
+# ========================================
+packages/frontend/dist/
+packages/frontend/build/
+packages/frontend/.vite/
+packages/frontend/vite.config.ts.timestamp-*
+
+# ========================================
+# BACKEND SPECIFIC
+# ========================================
+packages/backend/dist/
+packages/backend/build/
+packages/backend/.env
+packages/backend/.env.local
+packages/backend/uploads/

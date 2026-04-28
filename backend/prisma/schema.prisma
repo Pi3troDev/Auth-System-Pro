@@ -1,0 +1,190 @@
+// Configuração do cliente Prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Configuração da conexão com o banco
+datasource db {
+  provider = "mysql"
+}
+
+// ========================================
+// MODELO: User (Usuário)
+// ========================================
+model User {
+  id        String   @id @default(uuid())  // UUID: mais seguro que auto-increment
+  email     String   @unique                // Email único
+  password  String                          // Hash bcrypt (NUNCA senha em texto)
+  name      String?                         // Nome opcional
+  avatarUrl String?  @map("avatar_url")    // URL do avatar
+
+  // Verificação de email
+  emailVerified   Boolean  @default(false) @map("email_verified")
+  verificationToken String? @map("verification_token")
+
+  // 2FA (Two-Factor Authentication)
+  twoFactorEnabled Boolean @default(false) @map("two_factor_enabled")
+  twoFactorSecret  String? @map("two_factor_secret")  // Secret do TOTP
+
+  // Segurança adicional
+  secondaryEmail String? @map("secondary_email")
+  phoneNumber    String? @map("phone_number")
+
+  // Timestamps (sempre importante para auditoria)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relacionamentos
+  sessions      Session[]
+  refreshTokens RefreshToken[]
+  devices       Device[]
+  auditLogs     AuditLog[]
+  backupCodes   BackupCode[]
+
+  @@map("users")  // Nome da tabela no banco
+}
+
+// ========================================
+// MODELO: Session (Sessão Ativa)
+// ========================================
+model Session {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  token     String   @unique  // Access token (JWT)
+  expiresAt DateTime @map("expires_at")
+  
+  // Device info para rastreamento
+  deviceId  String?  @map("device_id")
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relacionamento
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  device Device? @relation(fields: [deviceId], references: [id])
+
+  @@index([userId])
+  @@index([expiresAt])  // Para limpar sessões expiradas
+  @@map("sessions")
+}
+
+// ========================================
+// MODELO: RefreshToken (Token de Renovação)
+// ========================================
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  token     String   @unique  // Hash do refresh token
+  expiresAt DateTime @map("expires_at")
+  
+  // Para detectar reuso (segurança)
+  revoked   Boolean  @default(false)
+  revokedAt DateTime? @map("revoked_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relacionamento
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+// ========================================
+// MODELO: Device (Dispositivos Conectados)
+// ========================================
+model Device {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  
+  // Identificação do dispositivo
+  fingerprint  String   @unique  // Hash único do dispositivo
+  deviceName   String?  @map("device_name")  // "iPhone 13 - Safari"
+  deviceType   String?  @map("device_type")  // "mobile", "desktop", "tablet"
+  
+  // Info técnica
+  browser      String?
+  os           String?
+  ipAddress    String?  @map("ip_address")
+  
+  // Status
+  trusted      Boolean  @default(false)  // Dispositivo confiável
+  lastAccessAt DateTime @default(now()) @map("last_access_at")
+  
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relacionamento
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessions Session[]
+
+  @@index([userId])
+  @@map("devices")
+}
+
+// ========================================
+// MODELO: AuditLog (Log de Auditoria)
+// ========================================
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  
+  // O que aconteceu
+  action    String   // "login", "password_change", "2fa_enabled", etc
+  details   String?  @db.Text  // JSON com detalhes extras
+  
+  // Onde aconteceu
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  
+  // Resultado
+  success   Boolean  @default(true)
+  errorMsg  String?  @map("error_msg")
+  
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relacionamento
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])  // Para queries de histórico
+  @@map("audit_logs")
+}
+
+// ========================================
+// MODELO: BackupCode (Códigos de Backup 2FA)
+// ========================================
+model BackupCode {
+  id     String  @id @default(uuid())
+  userId String  @map("user_id")
+  
+  code   String  @unique  // Hash do código
+  used   Boolean @default(false)
+  usedAt DateTime? @map("used_at")
+  
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relacionamento
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("backup_codes")
+}
+
+// ========================================
+// MODELO: PasswordReset (Recuperação de Senha)
+// ========================================
+model PasswordReset {
+  id        String   @id @default(uuid())
+  email     String
+  token     String   @unique  // Token único para reset
+  expiresAt DateTime @map("expires_at")
+  used      Boolean  @default(false)
+  
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([email])
+  @@index([expiresAt])
+  @@map("password_resets")
+}

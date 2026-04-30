@@ -11,6 +11,8 @@ npm-shrinkwrap.json
 # ========================================
 # ENVIRONMENT & SECRETS
 # ========================================
+backend/.env
+backend/.env.local
 .env
 .env.local
 .env.*.local
